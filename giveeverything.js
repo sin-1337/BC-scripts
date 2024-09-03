@@ -2,7 +2,7 @@
 // @name GiveEverything
 // @namespace https://www.bondageprojects.com/
 // @version 1.0
-// @description Adds teleport command
+// @description grants all items in the game
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
 // @match https://www.bondageprojects.elementfx.com/*
