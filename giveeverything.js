@@ -39,7 +39,7 @@ function addInventoryWithDelay(player, itemName, group, delay) {
 
 CommandCombine([{
     Tag: 'giveeverything',
-    Description: "Gives the player some amount of money.",
+    Description: "Gives the player all items in the game.",
     Action: args => {
         AssetFemale3DCG.forEach((group, index) => {
             group.Asset.forEach((item, subIndex) => {
