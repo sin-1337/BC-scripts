@@ -61,6 +61,10 @@
                     keywordRegex,
                     `<span style='color: ${mentionColor}; font-weight:bold;'>$1</span>`
                 );
+                highlightedMsg = highlightedMsg.replace(
+                    keywordRegex,
+                    (match) => match.charAt(0).toUpperCase() + match.slice(1)
+                );
 
                 console.log("Highlighting message:", highlightedMsg); // Log the highlighted message
 
