@@ -2,7 +2,7 @@
 // @name byebye
 // @namespace https://www.bondageprojects.com/
 // @version 1.0
-// @description Adds byebye which should leave your owner
+// @description Adds /byebye which should leave your owner, also totally frees you!
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
 // @match https://www.bondageprojects.elementfx.com/*
@@ -13,6 +13,8 @@
 // @grant none
 // @run-at document-end
 // ==/UserScript==
+
+// warning, this script also does a total release!
 
 CommandCombine([{
     Tag: 'byebye',
