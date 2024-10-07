@@ -49,8 +49,6 @@ CommandCombine([{
       LSCG.getModule("LeashingModule").RemoveAllLeashingsOfType("eyes")
       LSCG.getModule("LeashingModule").RemoveAllLeashingsOfType("mouth-with-foot")
       LSCG.getModule("LeashingModule").RemoveAllLeashingsOfType("chomp")
-      LSCG.getModule("LeashingModule").RemoveAllLeashingsOfType("eyes")
-      LSCG.getModule("LeashingModule").RemoveAllLeashingsOfType("eyes")
 
       addChatMessage("If someone had you grabbed, they don\'t now.");
     }
