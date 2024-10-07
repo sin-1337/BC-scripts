@@ -13,7 +13,7 @@
 // @grant none
 // ==/UserScript==
 
-//** there is currently a major flow with this code where it makes all chat, actions and rp, look like normal text. Do not use this right now.
+//** there is currently a major flaw with this code where it makes all chat, actions and rp, look like normal text. Do not use this right now.
 
 (function() {
     'use strict';
