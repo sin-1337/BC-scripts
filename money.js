@@ -41,6 +41,6 @@ CommandCombine([{
         const AMMOUNT = parseInt(splitArgs[0], 10);
         Player.Money=AMMOUNT;
         ServerPlayerSync();
-        addChatMessage("Set player money to  $" + AMMOUNT);
+        addChatMessage("Set player's money to  $" + AMMOUNT);
     }
 }]);
