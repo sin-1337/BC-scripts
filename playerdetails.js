@@ -17,7 +17,7 @@
 //Formats the player data for output to chat
 function playerToChar(PlayersInRoom, MemberNumber) {
     const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
-    
+
     //bail out and return placeholder if player is not available.
     if (!PLAYER) {
         return "- <span style='color:#FF0000'>[Unknown Person]</span>";
@@ -30,15 +30,15 @@ function playerToChar(PlayersInRoom, MemberNumber) {
     }
 
     //return html output containing information about the player with clickable link
-    return `- <span style="color:${PLAYER.LabelColor || '#FFFFFF'}; cursor:pointer; 
-            text-shadow: 0px 0px 3px #000000; white-space: nowrap;" 
-            onclick="showPlayerImage(${PLAYER.MemberNumber})" 
-            onmouseover="this.style.textDecoration='underline';" 
+    return `- <span style="color:${PLAYER.LabelColor || '#FFFFFF'}; cursor:pointer;
+            text-shadow: 0px 0px 3px #000000; white-space: nowrap;"
+            onclick="showPlayerImage(${PLAYER.MemberNumber})"
+            onmouseover="this.style.textDecoration='underline';"
             onmouseout="this.style.textDecoration='none';">${CharacterNickname(PLAYER)}[${PLAYER.MemberNumber}]${PlayerIsAdmin}</span>`;
 }
 
 //Opens the player profile
-function showPlayerImage(MemberNumber) {
+window.showPlayerImage = function (MemberNumber) {
     // Check if the person is still in the room
     const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
     if (PLAYER) {
@@ -47,7 +47,7 @@ function showPlayerImage(MemberNumber) {
     } else {
         ChatRoomSendLocal("This person is no longer in the room.");
     }
-}
+};
 
 CommandCombine([{
     Tag: 'players',
@@ -57,7 +57,7 @@ CommandCombine([{
         //TODO: make only this print if the "count" switch is specified
         ChatRoomSendLocal("There are " + ChatRoomData.Admin.length + " admins for this room.")
         ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room." );
-        
+
         //get a list of players
         let PlayersInRoom = [];
         for (let person in ChatRoomData.Character) {
