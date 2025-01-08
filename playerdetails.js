@@ -17,8 +17,7 @@
 
 // show help
 function showhelp() {
-  let helpout = "";
-  helpout += `<span style="color:#0000FF};
+  return `<span style="color:#0000FF};
     text-shadow: 0px 0px 3px #000000; white-space: nowrap;">
   /player help sheet</br>
     This command lists the number of admins and players in a room</br>
@@ -50,7 +49,6 @@ function showhelp() {
     ⚫ = You have this person blacklisted </br>
     👻 = You have ghosted this person
     </span>`;
-  ChatRoomSendLocal(helpout);
 }
 
 
@@ -70,7 +68,7 @@ window.showPlayerImage = function (MemberNumber) {
 // formats the data for outputting
 function formatoutput(player, player_is_admin, player_icons) {
   return `${player_is_admin} <span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
-      text-shadow: 0px 0px 3px #000000; white-space: nowrap;"
+      text-shadow: 0px 0px 1px #000000; white-space: nowrap;"
       onclick="showPlayerImage(${player.MemberNumber})"
       onmouseover="this.style.textDecoration='underline';"
       onmouseout="this.style.textDecoration='none';">${CharacterNickname(player)}[${player.MemberNumber}]</span>${player_icons}\n`;
@@ -133,7 +131,7 @@ CommandCombine([{
   Action: args => {
     const splitArgs = args.split(" ");
     if (splitArgs[0].toLowerCase() == "help") {
-      showhelp();
+      ChatRoomSendLocal(showhelp());
       return;
     }
 
