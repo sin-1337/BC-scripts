@@ -172,7 +172,7 @@ CommandCombine([{
       player_icons = setIcons(player);
 
       // if the player is me (person who ran the script)
-      if (player.MemberNumber == Player.membernumber) {
+      if (checkIfMe(player)) {
 
         // mark me with a star icon
         player_icons = "⭐ " + player_icons;
