@@ -73,7 +73,7 @@ function formatoutput(player, player_is_admin, player_icons) {
       text-shadow: 0px 0px 3px #000000; white-space: nowrap;"
       onclick="showPlayerImage(${player.MemberNumber})"
       onmouseover="this.style.textDecoration='underline';"
-      onmouseout="this.style.textDecoration='none';">${CharacterNickname(player)}[${player.MemberNumber}]${player_icons}</span>\n`;
+      onmouseout="this.style.textDecoration='none';">${CharacterNickname(player)}[${player.MemberNumber}]</span>${player_icons}\n`;
 }
 
 // determine if player is admin or whitelisted in the room and set their badge icon
