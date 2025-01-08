@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 1.0
+// @version 1.9
 // @description Adds /players, shows info about players in the room
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
 // @match https://www.bondageprojects.elementfx.com/*
 // @match https://bondage-europe.com/*
 // @match https://www.bondage-europe.com/*
+// @match https://www.bondageprojects.com/*
 // @match http://localhost:*/*
 // @icon data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant none
