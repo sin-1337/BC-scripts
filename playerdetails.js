@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 1.9
+// @version 2.0
 // @description Adds /players, shows info about players in the room
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
@@ -32,13 +32,15 @@ function showhelp() {
     vips - show only room whitelisted and the counts </br>
 
     </br>
-    Icons:
+    Badges:
     <hr>
-    ⭐ = Person is you </br>
     🛡️ = Person is Admin</br>
     📜 = Person is whitelisted in the room </br>
     🟢 = Person is a normal user </br>
+    </br>
+    Icons:
     <hr>
+    ⭐ = Person is you </br>
     👑 = Person is your owner </br>
     🔒 = Person is your submissive </br>
     🔓 = Person is on trial with you </br>
