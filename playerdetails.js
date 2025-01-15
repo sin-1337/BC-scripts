@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 3.0
+// @version 3.1
 // @description Adds /players, shows info about players in the room, also adds whisper+
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
@@ -123,12 +123,13 @@ window.sendWhisper = function (target) {
 
 // formats the data for outputting
 function formatoutput(player, badge, player_icons, isMe) {
+  let playername = CharacterNickname(player);
   let output = `<tr>
-            <td style="padding: 5px"><span style="cursor:pointer;" onclick="showPlayerImage(${player.MemberNumber})">${badge}</span></td>`;
+            <td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="cursor:pointer;" onclick="showPlayerImage(${player.MemberNumber})">${badge}</span></td>`;
 
   if (isMe) {
   // if the player is me, don't let me whisper myself
-    output += `<td style="padding: 5px"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
+    output += `<td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
                 font-family: Arial, sans-serif;
                 text-shadow: 0px 0px 1px #000000; white-space: nowrap;">
                   ${CharacterNickname(player)}[${player.MemberNumber}]
@@ -137,7 +138,7 @@ function formatoutput(player, badge, player_icons, isMe) {
   }
   else {
   // set up whispering
-     output += `<td style="padding: 5px"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
+     output += `<td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
                 font-family: Arial, sans-serif;
                 text-shadow: 0px 0px 1px #000000; white-space: nowrap;"
                 onclick="sendWhisper(${player.MemberNumber})"
