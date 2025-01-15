@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 3.1
+// @version 3.11
 // @description Adds /players, shows info about players in the room, also adds whisper+
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
@@ -17,8 +17,8 @@
 
 // show help
 function showhelp() {
-  return `<span style="color:#0000FF};
-    text-shadow: 0px 0px 3px #000000; white-space: nowrap;">
+  return `<table style="width: 100%"><tr><td>
+  <span style=" text-shadow: 0px 0px 3px #000000; white-space: normal;">
   </br>
   <hr>
   /player help sheet</br>
@@ -58,7 +58,10 @@ function showhelp() {
     <hr>
     Click Badge - If you click the badge for a player it will open their profile. </br>
     Click name - If you click the name/number of a player it will whisper them without range constraints. </br>
-    </span>`;
+    </span>
+    </td>
+    </tr>
+    </table>`;
 }
 
 
