@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 2.0
-// @description Adds /players, shows info about players in the room
+// @version 3.0
+// @description Adds /players, shows info about players in the room, also adds whisper+
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
 // @match https://www.bondageprojects.elementfx.com/*
@@ -19,12 +19,15 @@
 function showhelp() {
   return `<span style="color:#0000FF};
     text-shadow: 0px 0px 3px #000000; white-space: nowrap;">
+  </br>
+  <hr>
   /player help sheet</br>
-    This command lists the number of admins and players in a room</br>
-    and gives you some informatoin abou them
-    <hr>
+    This command lists the number of admins and players </br>
+    in a room and gives you some informatoin about them </br>
 
-    Arguments: </br>
+    </br>
+    Arguments:
+    <hr>
     help - show this menu </br>
     count - show only the player count </br>
     admins - show only a list of admins and the counts </br>
@@ -36,6 +39,7 @@ function showhelp() {
     🛡️ = Person is Admin</br>
     📜 = Person is whitelisted in the room </br>
     🟢 = Person is a normal user </br>
+
     </br>
     Icons:
     <hr>
@@ -47,7 +51,13 @@ function showhelp() {
     🫱 = Person is a friend </br>
     ⚪ = You have this person whitelisted </br>
     ⚫ = You have this person blacklisted </br>
-    👻 = You have ghosted this person
+    👻 = You have ghosted this person </br>
+
+    </br>
+    Actions:
+    <hr>
+    Click Badge - If you click the badge for a player it will open their profile. </br>
+    Click name - If you click the name/number of a player it will whisper them without range constraints. </br>
     </span>`;
 }
 
@@ -65,13 +75,80 @@ window.showPlayerImage = function (MemberNumber) {
     }
 };
 
+function ChatRoomSendWhisperRanged(target, msg) {
+    if (msg == "") {
+        return;
+    }
+    //replace the normal bracket with fake ones
+    msg = msg.replace(")", "）");
+
+    // check if target and player are the same
+    if (target.MemberNumber == Player.MemberNumber) {
+        addChatMessage(msg);
+    } else {
+        if (ChatRoomMapViewIsActive() && !ChatRoomMapViewCharacterOnWhisperRange(target) && msg[0] != "(") {
+            msg = `(${msg})`;
+        }
+
+        // build data payload
+        const data = ChatRoomGenerateChatRoomChatMessage("Whisper", msg);
+
+        // set the whisper target
+        data.Target = target.MemberNumber;
+
+        //send the whisper
+        ServerSend("ChatRoomChat", data);
+
+        // tell it who we are
+        data.Sender = Player.MemberNumber;
+
+        // send the chat to our window too
+        ChatRoomMessage(data);
+
+        // message was sent
+        return true;
+    }
+}
+
+
+window.sendWhisper = function (target) {
+  for ( index in Commands ) {
+    index = parseInt(index);
+    if (Commands[index].Tag == "whisper+") {
+      window.CommandSet(Commands[index].Tag + " " + target)
+    }
+  }
+};
+
+
 // formats the data for outputting
-function formatoutput(player, player_is_admin, player_icons) {
-  return `${player_is_admin} <span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
-      text-shadow: 0px 0px 1px #000000; white-space: nowrap;"
-      onclick="showPlayerImage(${player.MemberNumber})"
-      onmouseover="this.style.textDecoration='underline';"
-      onmouseout="this.style.textDecoration='none';">${CharacterNickname(player)}[${player.MemberNumber}]</span>${player_icons}\n`;
+function formatoutput(player, badge, player_icons, isMe) {
+  let output = `<tr>
+            <td style="padding: 5px"><span style="cursor:pointer;" onclick="showPlayerImage(${player.MemberNumber})">${badge}</span></td>`;
+
+  if (isMe) {
+  // if the player is me, don't let me whisper myself
+    output += `<td style="padding: 5px"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
+                font-family: Arial, sans-serif;
+                text-shadow: 0px 0px 1px #000000; white-space: nowrap;">
+                  ${CharacterNickname(player)}[${player.MemberNumber}]
+              </span>${player_icons}</td>
+          </tr>`;
+  }
+  else {
+  // set up whispering
+     output += `<td style="padding: 5px"><span style="color:${player.LabelColor || '#FFFFFF'}; cursor:pointer;
+                font-family: Arial, sans-serif;
+                text-shadow: 0px 0px 1px #000000; white-space: nowrap;"
+                onclick="sendWhisper(${player.MemberNumber})"
+                onmouseover="this.style.textDecoration='underline';"
+                onmouseout="this.style.textDecoration='none';">
+                  ${CharacterNickname(player)}[${player.MemberNumber}]
+              </span>${player_icons}</td>
+          </tr>`;
+  }
+
+  return output;
 }
 
 // determine if player is admin or whitelisted in the room and set their badge icon
@@ -125,12 +202,39 @@ function checkIfMe(player) {
 }
 
 CommandCombine([{
+  // implements the whisper+ command
+  Tag: 'whisper+',
+  Description: "Enables the /whisper+ command that is global to a map room",
+  Action: args => {
+    // parse arguments into membernumber and messsage
+    const MEMBERNUMBER = parseInt(args.slice(0, args.indexOf(" ")));
+    let message = args.slice(args.indexOf(" ") + 1)
+    console.log(message);
 
+    // if membernumber is not a valid number, bail
+    if (Number.isNaN(MEMBERNUMBER)) {
+      ChatRoomSendLocal("Member number is invalid.");
+      return 1;
+    }
+
+    if (message == "") {
+      ChatRoomSendLocal("Message was blank");
+      return 1;
+    }
+    // find player based no membernumber
+    const TARGET = ChatRoomCharacter.find(C => C.MemberNumber == MEMBERNUMBER);
+    ChatRoomSendWhisperRanged(TARGET, message);
+  }
+}]);
+
+
+CommandCombine([{
+  // implements the /players command
   Tag: 'players',
   Description: "Show the player count, helpful in maps.",
   Action: args => {
-    const splitArgs = args.split(" ");
-    if (splitArgs[0].toLowerCase() == "help") {
+    const SPLITARGS = args.split(" ");
+    if (SPLITARGS[0].toLowerCase() == "help") {
       ChatRoomSendLocal(showhelp());
       return;
     }
@@ -176,7 +280,7 @@ CommandCombine([{
         player_icons = "⭐ " + player_icons;
 
         // format my outpupt and store
-        me_output_html = formatoutput(player, badge, player_icons);
+        me_output_html = formatoutput(player, badge, player_icons, true);
 
       }
 
@@ -185,24 +289,24 @@ CommandCombine([{
         admin_count++;
         if (!checkIfMe(player, Player)) {
           // if the player is not me, output admin and skip rest of loop
-          admin_output_html += formatoutput(player, badge, player_icons);
+          admin_output_html += formatoutput(player, badge, player_icons, false);
           continue;
         }
       }
       else if (ChatRoomData.Whitelist.includes(player.MemberNumber) && !checkIfMe(player, Player)) {
         // if the player isn't an admin, is the player is whitelested?
-        vip_output_html += formatoutput(player, badge, player_icons);
+        vip_output_html += formatoutput(player, badge, player_icons, false);
         continue;
       }
       else if (!checkIfMe(player)){
         // player is normal, nonadmin, not whitelist, and not me.
-        player_output_html += formatoutput(player, badge, player_icons);
+        player_output_html += formatoutput(player, badge, player_icons, false);
       }
 
     }
 
     // if argument is "count", set filter vars and skip loop
-    if (splitArgs.some(item => item.toLowerCase() === "count")) {
+    if (SPLITARGS.some(item => item.toLowerCase() === "count")) {
       console.log("count only");
       showme = false;
       showadmins = false;
@@ -211,7 +315,7 @@ CommandCombine([{
     }
 
     // if argument is admins, set filter vars to only show admins and continue
-    if (splitArgs.some(item => item.toLowerCase() === "admins")) {
+    if (SPLITARGS.some(item => item.toLowerCase() === "admins")) {
       console.log("admins only");
       showme = false;
       showvip = false;
@@ -219,7 +323,7 @@ CommandCombine([{
     }
 
     // if argument is vips, set filter vars to only show vips (whitelisted) and continue
-    if (splitArgs.some(item => item.toLowerCase() === "vips")) {
+    if (SPLITARGS.some(item => item.toLowerCase() === "vips")) {
       console.log("vips only");
       showme = false;
       showadmins = false;
@@ -227,15 +331,25 @@ CommandCombine([{
     }
 
     //output total number of players/admins
-    //TODO: make only this print if the "count" switch is specified
+    //TODO: include this in the table space and add a header
     ChatRoomSendLocal("There are " + admin_count + "/" + ChatRoomData.Admin.length + " admins in the room.")
     ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room." );
+    let output_html = "";
 
-    // if the filter var resolves to true, print the respective output.
-    showme && ChatRoomSendLocal(me_output_html);
-    showadmins && ChatRoomSendLocal(admin_output_html);
-    showvip && ChatRoomSendLocal(vip_output_html);
-    showplayers && ChatRoomSendLocal(player_output_html);
+    // start the tabble and remove the boarders
+    output_html += `<table style="border: 0px;">`
+
+    // if the filter var resolves to true, add the respective output.
+    output_html = showme ? output_html + me_output_html : output_html;
+    output_html = showme ? output_html + admin_output_html : output_html;
+    output_html = showme ? output_html + vip_output_html : output_html;
+    output_html = showme ? output_html + player_output_html : output_html;
+
+    // finish the table
+    output_html += `</table>`
+
+    // show the final output
+    ChatRoomSendLocal(output_html);
 
   }
 }]);
