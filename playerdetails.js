@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name playerdetails
 // @namespace https://www.bondageprojects.com/
-// @version 3.11
+// @version 3.12
 // @description Adds /players, shows info about players in the room, also adds whisper+
 // @author Sin
 // @match https://bondageprojects.elementfx.com/*
@@ -67,12 +67,24 @@ function showhelp() {
 
 // Opens the player profile
 // This functions is setup up to be exposed to the global DOM
-window.showPlayerImage = function (MemberNumber) {
+window.showPlayerProfile = function (MemberNumber) {
     // Check if the person is still in the room
     const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
     if (PLAYER) {
         ChatRoomStatusUpdate("Preference");
         InformationSheetLoadCharacter(PLAYER);
+    } else {
+        ChatRoomSendLocal("This person is no longer in the room.");
+    }
+};
+
+// This functions is setup up to be exposed to the global DOM
+window.showPlayerFocus = function (MemberNumber) {
+    // Check if the person is still in the room
+  const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
+    if (PLAYER) {
+        ChatRoomStatusUpdate("Preference");
+        ChatRoomFocusCharacter(PLAYER);
     } else {
         ChatRoomSendLocal("This person is no longer in the room.");
     }
@@ -114,11 +126,11 @@ function ChatRoomSendWhisperRanged(target, msg) {
 }
 
 
-window.sendWhisper = function (target) {
+window.sendWhisper = function (memberNumber) {
   for ( index in Commands ) {
     index = parseInt(index);
     if (Commands[index].Tag == "whisper+") {
-      window.CommandSet(Commands[index].Tag + " " + target)
+      window.CommandSet(Commands[index].Tag + " " + memberNumber)
     }
   }
 };
@@ -128,7 +140,7 @@ window.sendWhisper = function (target) {
 function formatoutput(player, badge, player_icons, isMe) {
   let playername = CharacterNickname(player);
   let output = `<tr>
-            <td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="cursor:pointer;" onclick="showPlayerImage(${player.MemberNumber})">${badge}</span></td>`;
+            <td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="cursor:pointer;" onclick="showPlayerFocus(${player.MemberNumber})">${badge}</span></td>`;
 
   if (isMe) {
   // if the player is me, don't let me whisper myself
