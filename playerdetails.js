@@ -171,7 +171,7 @@ function formatoutput(player, badge, player_icons, isMe) {
 function setbadge(player) {
   let badge = "🟢";
   badge = ChatRoomData.Whitelist.includes(player.MemberNumber) ? "📜" : badge;
-  badge = ChatRoomData.Admin.includes(player.MemberNumber) ? "🛡️" : badge
+  badge = ChatRoomData.Admin.includes(player.MemberNumber) ? "🛡️" : badge;
   return badge;
 }
 
