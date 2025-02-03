@@ -9,7 +9,6 @@
 // @match https://bondage-europe.com/*
 // @match https://www.bondage-europe.com/*
 // @match https://www.bondageprojects.com/*
-// @match http://localhost:*/*
 // @icon data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant none
 // @run-at document-end
@@ -68,66 +67,82 @@ function showhelp() {
 // Opens the player profile
 // This functions is setup up to be exposed to the global DOM
 window.showPlayerProfile = function (MemberNumber) {
-    // Check if the person is still in the room
-    const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
-    if (PLAYER) {
-        ChatRoomStatusUpdate("Preference");
-        InformationSheetLoadCharacter(PLAYER);
-    } else {
-        ChatRoomSendLocal("This person is no longer in the room.");
-    }
+  // Check if the person is still in the room
+  const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
+  if (PLAYER) {
+    ChatRoomStatusUpdate("Preference");
+    InformationSheetLoadCharacter(PLAYER);
+  } else {
+    ChatRoomSendLocal("This person is no longer in the room.");
+  }
 };
 
 // This functions is setup up to be exposed to the global DOM
 window.showPlayerFocus = function (MemberNumber) {
-    // Check if the person is still in the room
+  // Check if the person is still in the room
   const PLAYER = ChatRoomCharacter.find(C => C.MemberNumber == MemberNumber);
-    if (PLAYER) {
-        ChatRoomStatusUpdate("Preference");
-        ChatRoomFocusCharacter(PLAYER);
-    } else {
-        ChatRoomSendLocal("This person is no longer in the room.");
-    }
+  if (PLAYER) {
+    ChatRoomStatusUpdate("Preference");
+    ChatRoomFocusCharacter(PLAYER);
+  } else {
+    ChatRoomSendLocal("This person is no longer in the room.");
+  }
 };
 
 function ChatRoomSendWhisperRanged(target, msg) {
-    if (msg == "") {
-        return;
-    }
-    //replace the normal bracket with fake ones
-    msg = msg.replace(")", "）");
+  if (msg == "") {
+    return;
+  }
 
-    // check if target and player are the same
-    if (target.MemberNumber == Player.MemberNumber) {
-        addChatMessage(msg);
-    } else {
-        if (ChatRoomMapViewIsActive() && !ChatRoomMapViewCharacterOnWhisperRange(target) && msg[0] != "(") {
-            msg = `(${msg})`;
-        }
+  //console.log("Original Message:", msg); // Log the initial message
 
-        // build data payload
-        const data = ChatRoomGenerateChatRoomChatMessage("Whisper", msg);
+  // First ensure we have a valid target object
+  const targetMember = typeof target === 'object' ? target : ChatRoomCharacter.find(C => C.MemberNumber === parseInt(target));
+  if (!targetMember) {
+    ChatRoomSendLocal(`${TextGet("CommandNoWhisperTarget")} ${target}.`, 30_000);
+    return;
+  }
 
-        // set the whisper target
-        data.Target = target.MemberNumber;
+  // Handle self whispers with gray text and memo emoji
+  if (targetMember.MemberNumber === Player.MemberNumber) {
+    const selfMessage = `<span style="color:#989898">💭 Log to </span><span style="color:${Player.LabelColor}">self</span><span style="color:#989898">: ${msg.replace(/\)/g, "）")}</span>`;
+    ChatRoomSendLocal(selfMessage);
+    return;
+  }
 
-        //send the whisper
-        ServerSend("ChatRoomChat", data);
+  // Replace normal brackets with fake ones in the message
+  msg = msg.replace(/\)/g, "）");
+  //console.log("Message After Bracket Replacement:", msg); // Log after bracket replacement
 
-        // tell it who we are
-        data.Sender = Player.MemberNumber;
+  // Prepare the message - now with ⤵ instead of :
+  let formattedMsg = `(Whisper+❩⤵\n${msg}`;
+  if (Player.ChatSettings.OOCAutoClose && !msg.endsWith('）')) {
+    formattedMsg += '）';
+  }
 
-        // send the chat to our window too
-        ChatRoomMessage(data);
+  //console.log("Formatted Message Before Sending:", formattedMsg); // Log the final formatted message
 
-        // message was sent
-        return true;
-    }
+  // build data payload with Whisper+
+  const data = ChatRoomGenerateChatRoomChatMessage("Whisper+", formattedMsg);
+  if (!data) {
+    data = ChatRoomGenerateChatRoomChatMessage("Whisper", formattedMsg);
+  }
+  data.Target = targetMember.MemberNumber;
+
+  // Create a copy for the server with type "Whisper"
+  const serverData = { ...data, Type: "Whisper" };
+  ServerSend("ChatRoomChat", serverData);
+
+  // Use original data (with Whisper+) for local display
+  data.Sender = Player.MemberNumber;
+  ChatRoomMessage(data);
+
+  return true;
 }
 
 
 window.sendWhisper = function (memberNumber) {
-  for ( index in Commands ) {
+  for (index in Commands) {
     index = parseInt(index);
     if (Commands[index].Tag == "whisper+") {
       window.CommandSet(Commands[index].Tag + " " + memberNumber)
@@ -135,6 +150,35 @@ window.sendWhisper = function (memberNumber) {
   }
 };
 
+window.ChatRoomMessageWhisperPlusClick = function () {
+  // Similar to ChatRoomMessageNameClick, but for whisper+
+  const sender = Number.parseInt(this.parentElement?.dataset.sender, 10);
+  const target = Number.parseInt(this.parentElement?.dataset.target, 10);
+  const memberNumber = sender === Player.MemberNumber && !Number.isNaN(target) ? target : sender;
+  const chatInput = /** @type {null | HTMLTextAreaElement} */(document.getElementById("InputChat"));
+
+  if (!chatInput || !ChatRoomCharacter.some(C => C.MemberNumber === memberNumber)) {
+    ChatRoomSendLocal(`${TextGet("CommandNoWhisperTarget")} ${memberNumber}.`, 30_000);
+    return;
+  }
+
+  // Handle the input text similar to the original whisper
+  const currentText = chatInput.value;
+  const whisperPlusCmd = `/whisper+ ${memberNumber} `;
+
+  // Check if the current input starts with a whisper command
+  const whisperMatch = currentText.match(/^\/whisper\+?\s*\d+\s*/);
+
+  if (whisperMatch) {
+    // Replace just the member number if there's already a whisper command
+    chatInput.value = whisperPlusCmd + currentText.substring(whisperMatch[0].length);
+  } else {
+    // Add the command to the start if there isn't one
+    chatInput.value = whisperPlusCmd + currentText;
+  }
+
+  chatInput.focus();
+};
 
 // formats the data for outputting
 function formatoutput(player, badge, player_icons, isMe) {
@@ -143,7 +187,7 @@ function formatoutput(player, badge, player_icons, isMe) {
             <td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="cursor:pointer;" onclick="showPlayerFocus(${player.MemberNumber})">${badge}</span></td>`;
 
   if (isMe) {
-  // if the player is me, don't let me whisper myself
+    // if the player is me, don't let me whisper myself
     output += `<td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="color:${player.LabelColor || '#000000'};
                 font-family: Arial, sans-serif;
                 text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.7); white-space: nowrap;">
@@ -152,8 +196,8 @@ function formatoutput(player, badge, player_icons, isMe) {
           </tr>`;
   }
   else {
-  // set up whispering
-     output += `<td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="color:${player.LabelColor || '#000000'}; cursor:pointer;
+    // set up whispering
+    output += `<td style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;"><span style="color:${player.LabelColor || '#000000'}; cursor:pointer;
                 font-family: Arial, sans-serif;
                 text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.7); white-space: nowrap;"
                 onclick="sendWhisper(${player.MemberNumber})"
@@ -221,25 +265,24 @@ CommandCombine([{
   // implements the whisper+ command
   Tag: 'whisper+',
   Description: "Enables the /whisper+ command that is global to a map room",
-  Action: args => {
+  Action: (args, command) => {
     // parse arguments into membernumber and messsage
     const MEMBERNUMBER = parseInt(args.slice(0, args.indexOf(" ")));
-    let message = args.slice(args.indexOf(" ") + 1)
-    console.log(message);
+    // Use the original command string to preserve case
+    let message = command.substring(command.indexOf(' ') + MEMBERNUMBER.toString().length + 2);
 
     // if membernumber is not a valid number, bail
     if (Number.isNaN(MEMBERNUMBER)) {
-      ChatRoomSendLocal("Member number is invalid.");
+      ChatRoomSendLocal("Member number is invalid.", 30_000);
       return 1;
     }
-
     if (message == "") {
-      ChatRoomSendLocal("Message was blank");
+      ChatRoomSendLocal("Message was blank.", 30_000);
       return 1;
     }
     // find player based no membernumber
     const TARGET = ChatRoomCharacter.find(C => C.MemberNumber == MEMBERNUMBER);
-    ChatRoomSendWhisperRanged(TARGET, message);
+    ChatRoomSendWhisperRanged(TARGET || MEMBERNUMBER, message);
   }
 }]);
 
@@ -261,7 +304,7 @@ CommandCombine([{
     let player_output_html = ""; // holds normal players
     let player; // the person we found in the room
     let admin_count = 0; // number of admins in the room
-    let badge =""; // holds the admin icon if the player is an admin
+    let badge = ""; // holds the admin icon if the player is an admin
     let player_icons = ""; // holds the list of player/status icons (string)
 
     // filter variables, show or not show certain output
@@ -314,7 +357,7 @@ CommandCombine([{
         vip_output_html += formatoutput(player, badge, player_icons, false);
         continue;
       }
-      else if (!checkIfMe(player)){
+      else if (!checkIfMe(player)) {
         // player is normal, nonadmin, not whitelist, and not me.
         player_output_html += formatoutput(player, badge, player_icons, false);
       }
@@ -323,7 +366,7 @@ CommandCombine([{
 
     // if argument is "count", set filter vars and skip loop
     if (SPLITARGS.some(item => item.toLowerCase() === "count")) {
-      console.log("count only");
+      //console.log("count only");
       showme = false;
       showadmins = false;
       showvip = false;
@@ -332,7 +375,7 @@ CommandCombine([{
 
     // if argument is admins, set filter vars to only show admins and continue
     if (SPLITARGS.some(item => item.toLowerCase() === "admins")) {
-      console.log("admins only");
+      //console.log("admins only");
       showme = false;
       showvip = false;
       showplayers = false;
@@ -340,16 +383,16 @@ CommandCombine([{
 
     // if argument is vips, set filter vars to only show vips (whitelisted) and continue
     if (SPLITARGS.some(item => item.toLowerCase() === "vips")) {
-      console.log("vips only");
+      //console.log("vips only");
       showme = false;
       showadmins = false;
-      showplayers=false;
+      showplayers = false;
     }
 
     //output total number of players/admins
     //TODO: include this in the table space and add a header
     ChatRoomSendLocal("There are " + admin_count + "/" + ChatRoomData.Admin.length + " admins in the room.")
-    ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room." );
+    ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room.");
     let output_html = "";
 
     // start the tabble and remove the boarders
@@ -369,3 +412,112 @@ CommandCombine([{
 
   }
 }]);
+
+function initWPlus() {
+  if (!window.bcModSdk) {
+    setTimeout(initWPlus, 500);
+    return;
+  }
+
+  var WPlus = bcModSdk.registerMod({
+    name: "WPlus",
+    fullName: "Whisper Plus",
+    version: "1.0.0",
+    repository: ""
+  });
+
+  function init() {
+    // Our main hook
+    WPlus.hookFunction("ChatRoomMessageDisplay", 0, (args, next) => {
+      const [data, msg, SenderCharacter, metadata] = args;
+
+      // If it's not our special Whisper+ type, let it process normally
+      if (data.Type !== "Whisper+") {
+        return next(args);
+      }
+
+      // For Whisper+, we handle it ourselves but use most of the original function's structure
+      const displayMessage = CommonCensor(ChatRoomActiveView.DisplayMessage(data, msg, SenderCharacter, metadata) ?? "¶¶¶");
+      if (displayMessage == "¶¶¶") return;
+
+      const divChildren = [];
+      const whisperTarget = SenderCharacter.IsPlayer() ? ChatRoomCharacter.find(c => c.MemberNumber == data.Target) : SenderCharacter;
+
+      divChildren.push(
+        ElementButton.Create(
+          null,
+          window.ChatRoomMessageWhisperPlusClick,
+          { noStyling: true },
+          {
+            button: {
+              classList: ["ReplyButton"],
+              children: ["\u21a9\ufe0f"]
+            }
+          },
+        ),
+        SenderCharacter.IsPlayer() ? TextGet("WhisperTo") : TextGetInScope("Screens/Online/ChatRoom/Text_ChatRoom.csv", "WhisperFrom"),
+        " ",
+        ElementButton.Create(
+          null,
+          window.ChatRoomMessageWhisperPlusClick,
+          { noStyling: true },
+          {
+            button: {
+              classList: ["ChatMessageName"],
+              attributes: {
+                "tabindex": -1
+              },
+              style: { "--label-color": whisperTarget.LabelColor },
+              children: [CharacterNickname(whisperTarget)],
+            },
+          },
+        ),
+        ": ",
+        displayMessage,
+      );
+
+      if (!whisperTarget.IsPlayer()) {
+        document.querySelector(`
+                  #TextAreaChatLog .ChatMessageWhisper[data-sender="${whisperTarget.MemberNumber}"] > .ReplyButton:not([tabindex='-1']),
+                  #TextAreaChatLog .ChatMessageWhisper[data-target="${whisperTarget.MemberNumber}"] > .ReplyButton:not([tabindex='-1'])
+              `)?.setAttribute("tabindex", "-1");
+      }
+
+      const classList = ["ChatMessage"];
+      classList.push("ChatMessageWhisper");  // Use Whisper styling
+
+      const div = ElementCreate({
+        tag: "div",
+        classList,
+        dataAttributes: {
+          time: ChatRoomCurrentTime(),
+          sender: data.Sender,
+          target: data.Target,
+        },
+        children: divChildren,
+      });
+
+      ChatRoomAppendChat(div);
+      return div;
+    });
+  }
+
+  function initWait() {
+    if (CurrentScreen == null || CurrentScreen === "Login") {
+      WPlus.hookFunction("LoginResponse", 0, (args, next) => {
+        next(args);
+        const response = args[0];
+        if (response && typeof response.Name === "string" && typeof response.AccountName === "string") {
+          init();
+        }
+      });
+    } else {
+      init();
+    }
+  }
+
+  initWait();
+}
+
+// Start the initialization process
+initWPlus();
