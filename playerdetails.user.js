@@ -171,7 +171,7 @@ function formatoutput(player, badge, player_icons, isMe) {
 function setbadge(player) {
   let badge = "🟢";
   badge = ChatRoomData.Whitelist.includes(player.MemberNumber) ? "📜" : badge;
-  badge = ChatRoomData.Admin.includes(player.MemberNumber) ? "🛡️" : badge;
+  badge = ChatRoomData.Admin.includes(player.MemberNumber) ? "🛡️" : badge
   return badge;
 }
 
@@ -193,7 +193,7 @@ function setIcons(player) {
       player_icons += "🔓 "
     }
   }
-  if (Player.Lover.includes(player.MemberNumber)) {
+  if (Player.GetLoversNumbers().includes(player.MemberNumber)) {
     // person is a lover
     player_icons += "❤️ ";
   }
@@ -204,10 +204,10 @@ function setIcons(player) {
   if (Player.WhiteList.includes(player.MemberNumber)) {
     player_icons += "⚪ ";
   }
-  if (Player.BlackList.includes(Player.MemberNumber)) {
+  if (Player.BlackList.includes(player.MemberNumber)) {
     player_icons += "⚫ "
   }
-  if (Player.GhostList.includes(Player.MemberNumber)) {
+  if (Player.GhostList.includes(player.MemberNumber)) {
     player_icons += "👻 ";
   }
   return player_icons;
@@ -216,6 +216,62 @@ function setIcons(player) {
 function checkIfMe(player) {
   return player.MemberNumber == Player.MemberNumber ? true : false;
 }
+
+
+// TODO: create ui to turn this off!!
+// TODO: reformat this maybe?
+// TODO: check for race condition if player joins room and leaves before this can trigger
+// set up a handler for room entry
+ChatRoomRegisterMessageHandler({
+    Description: "Send room stats on entry.",
+    Priority: 0, // trigger immediately
+    Callback: (data) => {
+
+        // check if we are a player and we entered a room
+        if (data.Type === "Action" &&
+            data.Content === "ServerEnter" &&
+            data.Sender === Player.MemberNumber) {
+
+            // work on a delay
+            setTimeout(() => {
+
+                // if the player left the room, bail!
+                if (Player.LastChatRoom === null) {
+                  return false;
+                }
+
+                // get player permissions
+                const currentPermissionText = `${TextGetInScope('Screens/Character/InformationSheet/Text_InformationSheet.csv', 'PermissionLevel' + Player.ItemPermission.toString())} (${Player.ItemPermission})`;
+
+                // format and display the player permissions
+                ChatRoomSendLocal(`
+                  <hr>
+                  <div style="padding-left: 5px; padding-right-5px; padding-bottom: 1px; padding-top: 0;">
+                    <span style="display: inline; margin: 0; padding: 0; line-height: 1; color: #5BA3E0; font-weight: bold;">Player Item Permission: </span>
+                    <span style="display: inline; margin: 0; padding: 0; line-height: 1; color: ${Player.LabelColor}; font-weight: bold; text-shadow: 0 0 1px black;">${currentPermissionText}</span>
+                    <span style="display: inline; margin: 0; padding: 0; line-height: 1; color: #5BA3E0; font-weight: bold;">&nbsp;</span>
+                  </div>
+                `);
+
+                // output room details
+                ChatRoomSendLocal("<div>Room details for: " + ChatRoomData.Name + "</div>");
+                for (let index in Commands ) {
+                    index = parseInt(index);
+                    if (Commands[index].Tag === "players") {
+                        Commands[index].Action("count");
+                        break;
+                    }
+                }
+
+              // output message letting players know how to view the full roster
+              ChatRoomSendLocal("<div>To see the full roster use /players</div><hr>");
+            }, 3600);
+        }
+
+        // must return false to allow other handlers to work with the data
+        return false;
+    }
+});
 
 CommandCombine([{
   // implements the whisper+ command
@@ -348,8 +404,8 @@ CommandCombine([{
 
     //output total number of players/admins
     //TODO: include this in the table space and add a header
-    ChatRoomSendLocal("There are " + admin_count + "/" + ChatRoomData.Admin.length + " admins in the room.")
-    ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room." );
+    ChatRoomSendLocal("<div>There are " + admin_count + "/" + ChatRoomData.Admin.length + " admins in the room.</div>")
+    ChatRoomSendLocal("There are " + ChatRoomCharacter.length + "/" + ChatRoomData.Limit + " total players in the room.</div>" );
     let output_html = "";
 
     // start the tabble and remove the boarders
@@ -357,9 +413,9 @@ CommandCombine([{
 
     // if the filter var resolves to true, add the respective output.
     output_html = showme ? output_html + me_output_html : output_html;
-    output_html = showadmins ? output_html + admin_output_html : output_html;
-    output_html = showvips ? output_html + vip_output_html : output_html;
-    output_html = showplayers ? output_html + player_output_html : output_html;
+    output_html = showme ? output_html + admin_output_html : output_html;
+    output_html = showme ? output_html + vip_output_html : output_html;
+    output_html = showme ? output_html + player_output_html : output_html;
 
     // finish the table
     output_html += `</table>`
